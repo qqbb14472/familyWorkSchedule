@@ -15,6 +15,7 @@ import { ShiftModal } from './components/ShiftModal';
 import { TimeOffManager } from './components/TimeOffManager';
 import { MemberScheduleModal } from './components/MemberScheduleModal';
 import { DeleteRangeModal } from './components/DeleteRangeModal';
+import { AnalysisPanel } from './components/AnalysisPanel';
 import { LoginScreen } from './components/LoginScreen';
 import { Snackbar, ToastMessage } from './components/Snackbar';
 import { isAuthenticated, setAuthenticated, getStoredAccount } from './utils/authUtils';
@@ -496,6 +497,14 @@ export default function App() {
             onApprove={handleApproveTimeOff}
             onReject={handleRejectTimeOff}
             onSubmitRequest={handleSubmitTimeOff}
+          />
+        )}
+
+        {viewMode === 'analysis' && (
+          <AnalysisPanel
+            shifts={shifts}
+            employees={employees}
+            currentWeekStart={currentWeekStart}
           />
         )}
       </main>

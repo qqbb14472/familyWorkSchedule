@@ -51,7 +51,7 @@ export interface ShiftConflict {
   shiftId: string;
 }
 
-export type ViewMode = 'week' | 'month' | 'timeoff';
+export type ViewMode = 'week' | 'month' | 'timeoff' | 'analysis';
 
 export interface ShiftPreset {
   id: string;

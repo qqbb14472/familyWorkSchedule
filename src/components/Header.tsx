@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   LogOut,
   Trash2,
+  BarChart2,
 } from 'lucide-react';
 import { getStartOfWeek } from '../utils/dateUtils';
 
@@ -191,6 +192,18 @@ export const Header: React.FC<HeaderProps> = ({
                   {pendingRequestsCount}
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={() => setViewMode('analysis')}
+              className={`flex items-center px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                viewMode === 'analysis'
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <BarChart2 className="w-4 h-4 mr-1.5" />
+              Analysis
             </button>
           </nav>
 
