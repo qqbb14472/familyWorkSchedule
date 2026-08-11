@@ -10,6 +10,7 @@ import {
   CalendarDays,
   LayoutGrid,
   LogOut,
+  Trash2,
 } from 'lucide-react';
 import { getStartOfWeek } from '../utils/dateUtils';
 
@@ -20,6 +21,7 @@ interface HeaderProps {
   setCurrentWeekStart: React.Dispatch<React.SetStateAction<Date>>;
   onOpenNewShiftModal: () => void;
   onCopyPreviousWeek: () => void;
+  onOpenDeleteRangeModal: () => void;
   onExportSchedule: () => void;
   pendingRequestsCount: number;
   onLogout?: () => void;
@@ -32,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   setCurrentWeekStart,
   onOpenNewShiftModal,
   onCopyPreviousWeek,
+  onOpenDeleteRangeModal,
   onExportSchedule,
   pendingRequestsCount,
   onLogout,
@@ -112,6 +115,15 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Copy className="w-4 h-4 mr-1.5 text-slate-500" />
               Copy Prev Week
+            </button>
+
+            <button
+              onClick={onOpenDeleteRangeModal}
+              title="Delete schedule by date range"
+              className="inline-flex items-center px-3 py-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 text-rose-700 text-sm font-medium transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4 mr-1.5 text-rose-600" />
+              Delete Range
             </button>
 
             <button

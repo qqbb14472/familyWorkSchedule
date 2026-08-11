@@ -14,6 +14,7 @@ import { MonthView } from './components/MonthView';
 import { ShiftModal } from './components/ShiftModal';
 import { TimeOffManager } from './components/TimeOffManager';
 import { MemberScheduleModal } from './components/MemberScheduleModal';
+import { DeleteRangeModal } from './components/DeleteRangeModal';
 import { LoginScreen } from './components/LoginScreen';
 import { Snackbar, ToastMessage } from './components/Snackbar';
 import { isAuthenticated, setAuthenticated, getStoredAccount } from './utils/authUtils';
@@ -127,6 +128,7 @@ export default function App() {
 
   // Modal State
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [isDeleteRangeModalOpen, setIsDeleteRangeModalOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [modalInitialEmpId, setModalInitialEmpId] = useState<string | undefined>();
   const [modalInitialDateStr, setModalInitialDateStr] = useState<string | undefined>();
@@ -259,6 +261,34 @@ export default function App() {
   const handleDeleteShift = (shiftId: string) => {
     setShifts((prev) => prev.filter((s) => s.id !== shiftId));
     deleteDocFromCloud('shifts', shiftId);
+  };
+
+  // Delete Shifts by Date Range handler
+  const handleDeleteShiftsByRange = (startDate: string, endDate: string, employeeId?: string) => {
+    const shiftsToDelete = shifts.filter((s) => {
+      const inRange = s.date >= startDate && s.date <= endDate;
+      const matchesEmp = !employeeId || s.employeeId === employeeId;
+      return inRange && matchesEmp;
+    });
+
+    if (shiftsToDelete.length === 0) return;
+
+    // Delete matching shifts from Firestore database
+    shiftsToDelete.forEach((s) => {
+      deleteDocFromCloud('shifts', s.id);
+    });
+
+    // Remove matching shifts from local state
+    const deleteIds = new Set(shiftsToDelete.map((s) => s.id));
+    setShifts((prev) => prev.filter((s) => !deleteIds.has(s.id)));
+
+    // Trigger success toast
+    const successToast: ToastMessage = {
+      id: `toast-${Date.now()}`,
+      type: 'success',
+      message: `Successfully deleted ${shiftsToDelete.length} shift(s) between ${startDate} and ${endDate} from database.`,
+    };
+    setToasts((prev) => [...prev, successToast]);
   };
 
   // Copy Previous Week Schedule
@@ -409,6 +439,7 @@ export default function App() {
           setIsShiftModalOpen(true);
         }}
         onCopyPreviousWeek={handleCopyPreviousWeek}
+        onOpenDeleteRangeModal={() => setIsDeleteRangeModalOpen(true)}
         onExportSchedule={handleExportCSV}
         pendingRequestsCount={pendingRequestsCount}
         onLogout={handleLogout}
@@ -482,6 +513,16 @@ export default function App() {
         onAddShift={handleAddShiftForMember}
         onEditShift={handleEditShift}
         onDeleteShift={handleDeleteShift}
+      />
+
+      {/* Delete Schedule Range Modal */}
+      <DeleteRangeModal
+        isOpen={isDeleteRangeModalOpen}
+        onClose={() => setIsDeleteRangeModalOpen(false)}
+        onDeleteRange={handleDeleteShiftsByRange}
+        employees={employees}
+        shifts={shifts}
+        currentWeekStart={currentWeekStart}
       />
 
       {/* Global Snackbar Notifications */}
