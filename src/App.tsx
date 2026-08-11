@@ -15,11 +15,40 @@ import { ShiftModal } from './components/ShiftModal';
 import { TimeOffManager } from './components/TimeOffManager';
 import { MemberScheduleModal } from './components/MemberScheduleModal';
 import { LoginScreen } from './components/LoginScreen';
+import { Snackbar, ToastMessage } from './components/Snackbar';
 import { isAuthenticated, setAuthenticated, getStoredAccount } from './utils/authUtils';
 
-import { fetchCollectionFromCloud, saveDocToCloud, deleteDocFromCloud, syncCollectionToCloud } from './utils/firebase';
+import {
+  fetchCollectionFromCloud,
+  saveDocToCloud,
+  deleteDocFromCloud,
+  syncCollectionToCloud,
+  setCloudErrorHandler,
+} from './utils/firebase';
 
 export default function App() {
+  // Toast Snackbar State
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const handleDismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Register Cloud Error Listener
+  useEffect(() => {
+    setCloudErrorHandler((errorMsg) => {
+      const newToast: ToastMessage = {
+        id: `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        type: 'error',
+        message: errorMsg,
+      };
+      setToasts((prev) => [...prev, newToast]);
+    });
+    return () => {
+      setCloudErrorHandler(null);
+    };
+  }, []);
+
   // Authentication state
   const [isAuthed, setIsAuthed] = useState<boolean>(() => isAuthenticated());
 
@@ -454,6 +483,9 @@ export default function App() {
         onEditShift={handleEditShift}
         onDeleteShift={handleDeleteShift}
       />
+
+      {/* Global Snackbar Notifications */}
+      <Snackbar toasts={toasts} onDismiss={handleDismissToast} />
     </div>
   );
 }

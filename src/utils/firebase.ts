@@ -5,6 +5,22 @@ import firebaseConfig from '../../firebase-applet-config.json';
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 
+export type CloudErrorHandler = (errorMsg: string, details?: any) => void;
+let cloudErrorHandler: CloudErrorHandler | null = null;
+
+export function setCloudErrorHandler(handler: CloudErrorHandler | null) {
+  cloudErrorHandler = handler;
+}
+
+function notifyCloudError(action: string, collectionName: string, err: any) {
+  const reason = err?.message || err?.code || String(err) || 'Unknown Firestore error';
+  const fullMsg = `Failed to ${action} ${collectionName} in Database: ${reason}`;
+  console.warn(`[Firebase] ${fullMsg}`, err);
+  if (cloudErrorHandler) {
+    cloudErrorHandler(fullMsg, err);
+  }
+}
+
 export function getFirebaseApp(): FirebaseApp {
   if (!app) {
     if (getApps().length > 0) {
@@ -93,7 +109,7 @@ export async function syncCollectionToCloud<T extends { id: string }>(
       await setDoc(docRef, cleanItem); // Overwrite without merge to purge deleted fields
     }
   } catch (err) {
-    console.warn(`[Firebase] Sync error for ${collectionName}:`, err);
+    notifyCloudError('sync', collectionName, err);
   }
 }
 
@@ -118,13 +134,13 @@ export async function fetchCollectionFromCloud<T>(collectionName: string): Promi
       ) {
         const cleanDoc = sanitizeDocForCloud(rawData);
         // Overwrite doc in DB without merge to delete these fields permanently from Firestore
-        setDoc(d.ref, cleanDoc).catch(() => {});
+        setDoc(d.ref, cleanDoc).catch((err) => notifyCloudError('clean doc in', collectionName, err));
       }
       result.push(populateLocalDefaults<T>(collectionName, rawData));
     }
     return result;
   } catch (err) {
-    console.warn(`[Firebase] Fetch error for ${collectionName}:`, err);
+    notifyCloudError('fetch', collectionName, err);
     return null;
   }
 }
@@ -139,7 +155,7 @@ export async function saveDocToCloud<T extends { id: string }>(
     const cleanItem = sanitizeDocForCloud(item);
     await setDoc(docRef, cleanItem); // Overwrite without merge to purge deleted fields from Firestore
   } catch (err) {
-    console.warn(`[Firebase] Save doc error for ${collectionName}:`, err);
+    notifyCloudError('save document to', collectionName, err);
   }
 }
 
@@ -149,7 +165,7 @@ export async function deleteDocFromCloud(collectionName: string, id: string): Pr
     const docRef = doc(database, collectionName, id);
     await deleteDoc(docRef);
   } catch (err) {
-    console.warn(`[Firebase] Delete doc error for ${collectionName}:`, err);
+    notifyCloudError('delete document from', collectionName, err);
   }
 }
 
@@ -159,7 +175,7 @@ export async function saveUserCredentialsToCloud(username: string, passwordHash:
     const docRef = doc(database, 'users', 'auth_credential');
     await setDoc(docRef, { username, passwordHash, updatedAt: new Date().toISOString() });
   } catch (err) {
-    console.warn('[Firebase] Save user credentials error:', err);
+    notifyCloudError('save user credentials to', 'users', err);
   }
 }
 
@@ -172,7 +188,7 @@ export async function fetchUserCredentialsFromCloud(): Promise<{ username: strin
       return docSnap.data() as { username: string; passwordHash: string };
     }
   } catch (err) {
-    console.warn('[Firebase] Fetch user credentials error:', err);
+    notifyCloudError('fetch credentials from', 'users', err);
   }
   return null;
 }
