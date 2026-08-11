@@ -37,6 +37,37 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["username", "passwordHash"]
+    },
+    "timeoff": {
+      "title": "Time Off Requests",
+      "description": "Time off requests collection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "type": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "startDate", "endDate"]
+    },
+    "swaps": {
+      "title": "Shift Swaps",
+      "description": "Shift swap requests collection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "requesterShiftId": { "type": "string" },
+        "requesterId": { "type": "string" },
+        "targetEmployeeId": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "requesterShiftId", "requesterId"]
     }
   }
 }

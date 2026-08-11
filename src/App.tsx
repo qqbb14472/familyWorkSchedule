@@ -66,6 +66,20 @@ export default function App() {
       } else {
         syncCollectionToCloud('shifts', shifts);
       }
+
+      const cloudTimeOff = await fetchCollectionFromCloud<TimeOffRequest>('timeoff');
+      if (cloudTimeOff && cloudTimeOff.length > 0) {
+        setTimeOffRequests(cloudTimeOff);
+      } else {
+        syncCollectionToCloud('timeoff', timeOffRequests);
+      }
+
+      const cloudSwaps = await fetchCollectionFromCloud<ShiftSwapRequest>('swaps');
+      if (cloudSwaps && cloudSwaps.length > 0) {
+        setShiftSwaps(cloudSwaps);
+      } else {
+        syncCollectionToCloud('swaps', shiftSwaps);
+      }
     }
 
     loadCloudData();
@@ -245,6 +259,7 @@ export default function App() {
     });
 
     setShifts((prev) => [...prev, ...copiedShifts]);
+    copiedShifts.forEach((cs) => saveDocToCloud('shifts', cs));
   };
 
   const handleOpenNewShiftForDate = (dateStr: string) => {
@@ -298,7 +313,11 @@ export default function App() {
   const handleDeleteEmployee = (employeeId: string) => {
     setEmployees((prev) => prev.filter((e) => e.id !== employeeId));
     deleteDocFromCloud('employees', employeeId);
+    
+    // Delete associated shifts from state and cloud
+    shifts.filter((s) => s.employeeId === employeeId).forEach((s) => deleteDocFromCloud('shifts', s.id));
     setShifts((prev) => prev.filter((s) => s.employeeId !== employeeId));
+
     setTimeOffRequests((prev) => prev.filter((r) => r.employeeId !== employeeId));
     setShiftSwaps((prev) =>
       prev.filter((s) => s.requesterId !== employeeId && s.targetEmployeeId !== employeeId)
@@ -310,15 +329,21 @@ export default function App() {
 
   // Time Off Request Handlers
   const handleApproveTimeOff = (id: string) => {
-    setTimeOffRequests((prev) =>
-      prev.map((req) => (req.id === id ? { ...req, status: 'approved' } : req))
-    );
+    setTimeOffRequests((prev) => {
+      const updated = prev.map((req) => (req.id === id ? { ...req, status: 'approved' as const } : req));
+      const target = updated.find((r) => r.id === id);
+      if (target) saveDocToCloud('timeoff', target);
+      return updated;
+    });
   };
 
   const handleRejectTimeOff = (id: string) => {
-    setTimeOffRequests((prev) =>
-      prev.map((req) => (req.id === id ? { ...req, status: 'rejected' } : req))
-    );
+    setTimeOffRequests((prev) => {
+      const updated = prev.map((req) => (req.id === id ? { ...req, status: 'rejected' as const } : req));
+      const target = updated.find((r) => r.id === id);
+      if (target) saveDocToCloud('timeoff', target);
+      return updated;
+    });
   };
 
   const handleSubmitTimeOff = (
@@ -331,6 +356,7 @@ export default function App() {
       submittedAt: formatDateISO(new Date()),
     };
     setTimeOffRequests((prev) => [newReq, ...prev]);
+    saveDocToCloud('timeoff', newReq);
   };
 
   const pendingRequestsCount = timeOffRequests.filter((r) => r.status === 'pending').length;

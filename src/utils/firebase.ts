@@ -36,15 +36,26 @@ export function getFirestoreDb(): Firestore {
   return db;
 }
 
-// Strips unwanted fields from documents before saving to Firestore to minimize data payload and strictly exclude deleted schema fields
+// Strips unwanted fields and undefined values from documents before saving to Firestore to prevent setDoc errors
 export function sanitizeDocForCloud<T extends Record<string, any>>(item: T): Record<string, any> {
-  const cleanDoc = { ...item };
-  delete cleanDoc.department;
-  delete cleanDoc.email;
-  delete cleanDoc.hourlyRate;
-  delete cleanDoc.maxHoursPerWeek;
-  delete cleanDoc.role;
-  delete cleanDoc.active;
+  const cleanDoc: Record<string, any> = {};
+  for (const key of Object.keys(item)) {
+    if (
+      key === 'department' ||
+      key === 'email' ||
+      key === 'hourlyRate' ||
+      key === 'maxHoursPerWeek' ||
+      key === 'role' ||
+      key === 'active'
+    ) {
+      continue;
+    }
+    const val = item[key];
+    // CRITICAL: Firestore setDoc/updateDoc fails if any field value is undefined
+    if (val !== undefined) {
+      cleanDoc[key] = val;
+    }
+  }
   return cleanDoc;
 }
 
