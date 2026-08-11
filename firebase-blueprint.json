@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "shifts": {
+      "title": "Shifts",
+      "description": "Work shifts collection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "date": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "breakMinutes": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "date", "startTime", "endTime"]
+    },
+    "employees": {
+      "title": "Employees",
+      "description": "Employee directory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "avatarBg": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "users": {
+      "title": "Users",
+      "description": "User login account hash",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["username", "passwordHash"]
+    }
+  }
+}

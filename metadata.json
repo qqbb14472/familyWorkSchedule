@@ -1,0 +1,6 @@
+{
+  "name": "Work Schedule Management",
+  "description": "An interactive work schedule and shift management web application for planning shifts, managing team availability, and handling time-off requests.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
