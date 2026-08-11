@@ -63,7 +63,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   useEffect(() => {
     if (editingShift) {
       const emp = employees.find((e) => e.id === editingShift.employeeId);
-      setEmployeeName(emp ? emp.name : '');
+      setEmployeeName(emp ? emp.name : (editingShift as any).employeeName || '');
       setDate(editingShift.date);
       setStartTime(editingShift.startTime);
       setEndTime(editingShift.endTime);
@@ -234,7 +234,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     onSave({
       id: editingShift?.id,
       employeeName: employeeName.trim(),
-      employeeId: matchedEmployee?.id,
+      employeeId: matchedEmployee?.id || editingShift?.employeeId,
       date,
       startTime: isCompressedDay ? '' : startTime,
       endTime: isCompressedDay ? '' : endTime,

@@ -188,12 +188,18 @@ export default function App() {
 
     if (shiftData.employeeName && shiftData.employeeName.trim()) {
       const nameTrimmed = shiftData.employeeName.trim();
-      const existingEmp = employees.find(
+      const existingEmpByName = employees.find(
         (e) => e.name.toLowerCase() === nameTrimmed.toLowerCase()
       );
 
-      if (existingEmp) {
-        finalEmpId = existingEmp.id;
+      if (existingEmpByName) {
+        finalEmpId = existingEmpByName.id;
+      } else if (finalEmpId && employees.some((e) => e.id === finalEmpId)) {
+        // Update existing employee's name
+        const targetEmp = employees.find((e) => e.id === finalEmpId)!;
+        const updatedEmp = { ...targetEmp, name: nameTrimmed };
+        setEmployees((prev) => prev.map((e) => (e.id === finalEmpId ? updatedEmp : e)));
+        saveDocToCloud('employees', updatedEmp);
       } else {
         // Create a new team member automatically with this name
         const newEmp: Employee = {
@@ -230,6 +236,13 @@ export default function App() {
         prev.map((s) => (s.id === shiftData.id ? shiftToSave : s))
       );
       saveDocToCloud('shifts', shiftToSave);
+
+      const successToast: ToastMessage = {
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        message: 'Shift schedule updated successfully in database.',
+      };
+      setToasts((prev) => [...prev, successToast]);
     } else {
       const datesToSchedule =
         shiftData.recurringDates && shiftData.recurringDates.length > 0

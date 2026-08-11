@@ -122,7 +122,7 @@ export async function fetchCollectionFromCloud<T>(collectionName: string): Promi
 
     const result: T[] = [];
     for (const d of snapshot.docs) {
-      const rawData = d.data();
+      const rawData = { id: d.id, ...d.data() };
       // Check if document contains any of the unwanted fields in DB and purge them
       if (
         'department' in rawData ||
@@ -150,6 +150,10 @@ export async function saveDocToCloud<T extends { id: string }>(
   item: T
 ): Promise<void> {
   try {
+    if (!item || !item.id) {
+      console.warn(`[Firebase] Cannot save document to ${collectionName}: document or item.id is missing.`, item);
+      return;
+    }
     const database = getFirestoreDb();
     const docRef = doc(database, collectionName, item.id);
     const cleanItem = sanitizeDocForCloud(item);
