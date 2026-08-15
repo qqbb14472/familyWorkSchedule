@@ -211,12 +211,6 @@ export const MonthView: React.FC<MonthViewProps> = ({
                   >
                     {dateObj.getDate()}
                   </span>
-
-                  {dayShifts.length > 0 && (
-                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {dayShifts.length} {dayShifts.length === 1 ? 'shift' : 'shifts'}
-                    </span>
-                  )}
                 </div>
 
                 {/* Add Shift button on hover */}
