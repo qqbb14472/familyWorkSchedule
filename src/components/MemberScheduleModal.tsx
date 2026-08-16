@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Employee, Shift } from '../types';
-import { calculateShiftHours, formatTime12h, parseDateISO } from '../utils/dateUtils';
+import { calculateShiftHours, formatTime24h, parseDateISO } from '../utils/dateUtils';
 import {
   X,
   User,
@@ -12,7 +12,9 @@ import {
   Save,
   Check,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Palmtree,
+  Coffee
 } from 'lucide-react';
 
 interface MemberScheduleModalProps {
@@ -252,7 +254,10 @@ export const MemberScheduleModal: React.FC<MemberScheduleModalProps> = ({
           ) : (
             <div className="space-y-2.5">
               {memberShifts.map((shift) => {
-                const hours = calculateShiftHours(
+                const isCompressed = shift.isCompressedDay;
+                const isHoliday = shift.isHoliday || shift.status === 'holiday';
+                const isTimeOff = !isHoliday && (shift.isTimeOff || (shift.status === 'time_off' && !shift.isCompressedDay));
+                const hours = isCompressed ? 0 : calculateShiftHours(
                   shift.startTime,
                   shift.endTime,
                   shift.breakMinutes
@@ -262,27 +267,67 @@ export const MemberScheduleModal: React.FC<MemberScheduleModalProps> = ({
                 return (
                   <div
                     key={shift.id}
-                    className="p-3.5 bg-white border border-slate-200/90 rounded-xl hover:border-slate-300 transition-all shadow-2xs flex items-center justify-between gap-3 group"
+                    className={`p-3.5 border rounded-xl hover:border-slate-300 transition-all shadow-2xs flex items-center justify-between gap-3 group ${
+                      isHoliday 
+                        ? 'bg-orange-50/70 border-orange-200/90' 
+                        : isCompressed || isTimeOff 
+                        ? 'bg-purple-50/70 border-purple-200/90' 
+                        : 'bg-white border-slate-200/90'
+                    }`}
                   >
                     <div className="flex items-center space-x-3 min-w-0">
-                      <div className="p-2.5 rounded-lg bg-indigo-50 text-indigo-700 shrink-0">
-                        <Clock className="w-4 h-4" />
+                      <div className={`p-2.5 rounded-lg shrink-0 ${
+                        isHoliday 
+                          ? 'bg-orange-100 text-orange-800' 
+                          : isCompressed || isTimeOff 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : 'bg-indigo-50 text-indigo-700'
+                      }`}>
+                        {isHoliday ? (
+                          <Palmtree className="w-4 h-4" />
+                        ) : isCompressed || isTimeOff ? (
+                          <Coffee className="w-4 h-4" />
+                        ) : (
+                          <Clock className="w-4 h-4" />
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                           <span className="text-xs font-bold text-slate-900">
                             {formatDisplayDate(shift.date)}
                           </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
-                            {hours} hrs
-                          </span>
+                          {isHoliday ? (
+                            <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-orange-200 text-orange-950 rounded">
+                              Holiday (Off) • {hours} hrs
+                            </span>
+                          ) : isCompressed ? (
+                            <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-purple-200 text-purple-900 rounded">
+                              Compress Day
+                            </span>
+                          ) : isTimeOff ? (
+                            <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-purple-200 text-purple-900 rounded">
+                              Time Off • {hours} hrs
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                              {hours} hrs
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs font-medium text-slate-600 mt-0.5">
-                          {formatTime12h(shift.startTime)} – {formatTime12h(shift.endTime)}{' '}
-                          {shift.breakMinutes > 0 && (
-                            <span className="text-slate-400 text-[11px]">
-                              ({shift.breakMinutes}m break)
-                            </span>
+                          {isCompressed ? (
+                            <span className="text-purple-700 font-semibold">Off Day</span>
+                          ) : shift.startTime && shift.endTime ? (
+                            <>
+                              {formatTime24h(shift.startTime)} – {formatTime24h(shift.endTime)}{' '}
+                              {shift.breakMinutes > 0 && (
+                                <span className="text-slate-400 text-[11px]">
+                                  ({shift.breakMinutes}m break)
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span>Time Off</span>
                           )}
                         </p>
                       </div>

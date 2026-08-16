@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Shift, Employee } from '../types';
-import { formatDateISO, formatTime12h } from '../utils/dateUtils';
+import { formatDateISO, formatTime24h } from '../utils/dateUtils';
 import { getEmployeeColorTheme } from '../utils/employeeColors';
-import { ChevronLeft, ChevronRight, Plus, Sun, Moon, Users, MapPin, Coffee } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Sun, Moon, Users, MapPin, Coffee, Palmtree } from 'lucide-react';
 
 interface MonthViewProps {
   shifts: Shift[];
@@ -87,15 +87,9 @@ export const MonthView: React.FC<MonthViewProps> = ({
           <div className="flex items-center space-x-1 bg-white border border-slate-200 rounded-lg p-1 shadow-2xs">
             <button
               onClick={handlePrevMonth}
-              className="px-2 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded hover:bg-slate-100 cursor-pointer transition-colors"
-              title="Previous Month"
-            >
-              ‹ Month
-            </button>
-            <button
-              onClick={handlePrevWeek}
               className="p-1.5 text-slate-600 hover:text-slate-900 rounded hover:bg-slate-100 cursor-pointer transition-colors"
-              title="Previous Week"
+              title="Previous Month"
+              aria-label="Previous Month"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -107,18 +101,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
               Today
             </button>
             <button
-              onClick={handleNextWeek}
+              onClick={handleNextMonth}
               className="p-1.5 text-slate-600 hover:text-slate-900 rounded hover:bg-slate-100 cursor-pointer transition-colors"
-              title="Next Week"
+              title="Next Month"
+              aria-label="Next Month"
             >
               <ChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleNextMonth}
-              className="px-2 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded hover:bg-slate-100 cursor-pointer transition-colors"
-              title="Next Month"
-            >
-              Month ›
             </button>
           </div>
           <h2 className="text-lg font-bold text-slate-900">{monthTitle}</h2>
@@ -237,28 +225,33 @@ export const MonthView: React.FC<MonthViewProps> = ({
                     const isNight = s.startTime >= '18:00' || s.endTime === '07:00';
 
                     const isCompressed = s.isCompressedDay;
-                    const isTimeOff = s.isTimeOff || (s.status === 'time_off' && !s.isCompressedDay);
-                    const isSpecial = isCompressed || isTimeOff;
+                    const isHoliday = s.isHoliday || s.status === 'holiday';
+                    const isTimeOff = !isHoliday && (s.isTimeOff || (s.status === 'time_off' && !s.isCompressedDay));
+                    const isSpecial = isCompressed || isTimeOff || isHoliday;
 
                     return (
                       <div
                         key={s.id}
                         onClick={() => onEditShift(s)}
                         className={`px-2 py-1.5 rounded-md text-[11px] font-medium border transition-all cursor-pointer flex flex-col gap-0.5 ${
-                          isSpecial
+                          isHoliday
+                            ? 'bg-orange-50 border-orange-300 text-orange-950 hover:bg-orange-100/80'
+                            : isSpecial
                             ? 'bg-purple-50 border-purple-300 text-purple-950 hover:bg-purple-100/80'
                             : `${empTheme.bg} ${empTheme.text} ${empTheme.border} ${empTheme.hover}`
                         } ${
                           isDimmed ? 'opacity-30 grayscale-20' : 'opacity-100 shadow-2xs'
                         }`}
-                        title={`${emp ? emp.name : 'Employee'}: ${s.startTime ? `${formatTime12h(s.startTime)} - ${formatTime12h(s.endTime)}` : ''} ${isCompressed ? '[Compress Day]' : isTimeOff ? '[Time Off]' : ''}`}
+                        title={`${emp ? emp.name : 'Employee'}: ${s.startTime ? `${formatTime24h(s.startTime)} - ${formatTime24h(s.endTime)}` : ''} ${isHoliday ? '[Holiday (Off)]' : isCompressed ? '[Compress Day]' : isTimeOff ? '[Time Off]' : ''}`}
                       >
                         <div className="flex items-center justify-between gap-1 leading-tight">
                           <div className="flex items-center space-x-1 truncate font-bold">
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSpecial ? 'bg-purple-600' : empTheme.badgeBg}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isHoliday ? 'bg-orange-500' : isSpecial ? 'bg-purple-600' : empTheme.badgeBg}`} />
                             <span className="truncate">{emp ? emp.name : 'Staff'}</span>
                           </div>
-                          {isSpecial ? (
+                          {isHoliday ? (
+                            <Palmtree className="w-3 h-3 text-orange-600 shrink-0" />
+                          ) : isSpecial ? (
                             <Coffee className="w-3 h-3 text-purple-700 shrink-0" />
                           ) : isNight ? (
                             <Moon className="w-3 h-3 text-indigo-700 shrink-0" />
@@ -266,6 +259,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
                             <Sun className="w-3 h-3 text-amber-600 shrink-0" />
                           )}
                         </div>
+
+                        {isHoliday && (
+                          <div className="text-[10px] font-extrabold text-orange-950 bg-orange-200/80 px-1.5 py-0.2 rounded w-fit my-0.5">
+                            Holiday (Off)
+                          </div>
+                        )}
 
                         {isCompressed && (
                           <div className="text-[10px] font-extrabold text-purple-800 bg-purple-200/60 px-1.5 py-0.2 rounded w-fit my-0.5">
@@ -280,8 +279,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
                         )}
 
                         {s.startTime && s.endTime ? (
-                          <div className="text-[10px] font-semibold opacity-90 pl-2.5">
-                            {formatTime12h(s.startTime)} – {formatTime12h(s.endTime)}
+                          <div
+                            className="text-[10px] font-semibold opacity-90 pl-2.5 truncate whitespace-nowrap overflow-hidden"
+                            title={`${formatTime24h(s.startTime)} – ${formatTime24h(s.endTime)}`}
+                          >
+                            {formatTime24h(s.startTime)} – {formatTime24h(s.endTime)}
                           </div>
                         ) : null}
 

@@ -141,15 +141,40 @@ export function calculateShiftHours(startTime: string, endTime: string, breakMin
 }
 
 /**
- * Format 24h time "14:30" to "2:30 PM"
+ * Format time string to 24-hour display format, e.g. "07:00" -> "07:00", "7:00" -> "07:00", "7" -> "07:00"
+ */
+export function formatTime24h(timeStr: string): string {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
+  const parts = trimmed.split(':');
+  if (parts.length >= 2) {
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h)) return trimmed;
+    const hourStr = String(h).padStart(2, '0');
+    const minStr = String(isNaN(m) ? 0 : m).padStart(2, '0');
+    return `${hourStr}:${minStr}`;
+  }
+  const h = parseInt(trimmed, 10);
+  if (!isNaN(h)) {
+    return `${String(h).padStart(2, '0')}:00`;
+  }
+  return trimmed;
+}
+
+/**
+ * Format 24-hour time representation (defaults to 24h format across all interfaces)
  */
 export function formatTime12h(timeStr: string): string {
-  if (!timeStr) return '';
-  const [h, m] = timeStr.split(':').map(Number);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  const minStr = String(m).padStart(2, '0');
-  return `${hour12}:${minStr} ${period}`;
+  return formatTime24h(timeStr);
+}
+
+/**
+ * Format time range in 24-hour format, e.g. "07:00 – 19:00"
+ */
+export function formatTimeRange24h(startTime: string, endTime: string): string {
+  if (!startTime || !endTime) return '';
+  return `${formatTime24h(startTime)} – ${formatTime24h(endTime)}`;
 }
 
 /**

@@ -3,13 +3,13 @@ import { Employee, Shift, TimeOffRequest, ShiftPreset } from '../types';
 import {
   calculateShiftHours,
   detectConflicts,
-  formatTime12h,
+  formatTime24h,
   generateRecurringDates,
   RecurringType,
   formatDateISO,
   parseDateISO,
 } from '../utils/dateUtils';
-import { X, Clock, AlertTriangle, Calendar, Sparkles, Check, MapPin, Coffee, FileText } from 'lucide-react';
+import { X, Clock, AlertTriangle, Calendar, Sparkles, Check, MapPin, Coffee, FileText, Palmtree } from 'lucide-react';
 
 interface ShiftModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ interface ShiftModalProps {
     employeeId?: string;
     employeeName?: string;
     recurringDates?: string[];
+    isHoliday?: boolean;
   }) => void;
   onDelete?: (shiftId: string) => void;
   editingShift?: Shift | null;
@@ -51,6 +52,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   const [location, setLocation] = useState<string>('');
   const [isCompressedDay, setIsCompressedDay] = useState<boolean>(false);
   const [isTimeOff, setIsTimeOff] = useState<boolean>(false);
+  const [isHoliday, setIsHoliday] = useState<boolean>(false);
   const [description, setDescription] = useState<string>('');
   const [colorPreset, setColorPreset] = useState<string>('preset-day');
   const [confirmDeleteShift, setConfirmDeleteShift] = useState(false);
@@ -70,7 +72,12 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
       setBreakMinutes(editingShift.breakMinutes);
       setLocation(editingShift.location || '');
       setIsCompressedDay(!!editingShift.isCompressedDay);
-      setIsTimeOff(!!editingShift.isTimeOff || (editingShift.status === 'time_off' && !editingShift.isCompressedDay));
+      setIsHoliday(!!editingShift.isHoliday || editingShift.status === 'holiday');
+      setIsTimeOff(
+        (!!editingShift.isTimeOff || editingShift.status === 'time_off') &&
+        !editingShift.isCompressedDay &&
+        !editingShift.isHoliday
+      );
       setDescription(editingShift.description || editingShift.notes || '');
       setColorPreset(editingShift.colorPreset || 'preset-day');
       setRecurringType('none');
@@ -88,6 +95,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
       setLocation('');
       setIsCompressedDay(false);
       setIsTimeOff(false);
+      setIsHoliday(false);
       setDescription('');
       setColorPreset('preset-day');
       setRecurringType('none');
@@ -114,11 +122,24 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     setColorPreset(preset.id);
   };
 
+  // Handle Holiday toggle (Default: 8:00 - 16:00, 30m break = 7.5 hr)
+  const handleToggleHoliday = (checked: boolean) => {
+    setIsHoliday(checked);
+    if (checked) {
+      setIsCompressedDay(false);
+      setIsTimeOff(false);
+      setStartTime('08:00');
+      setEndTime('16:00');
+      setBreakMinutes(30);
+    }
+  };
+
   // Handle Compress Day toggle
   const handleToggleCompressedDay = (checked: boolean) => {
     setIsCompressedDay(checked);
     if (checked) {
       setIsTimeOff(false);
+      setIsHoliday(false);
       setStartTime('');
       setEndTime('');
       setBreakMinutes(0);
@@ -136,6 +157,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     setIsTimeOff(checked);
     if (checked) {
       setIsCompressedDay(false);
+      setIsHoliday(false);
       if (!startTime || !endTime) {
         setStartTime('07:00');
         setEndTime('19:00');
@@ -214,9 +236,10 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     location,
     description: description.trim() || undefined,
     notes: description.trim() || undefined,
-    status: (isCompressedDay || isTimeOff) ? 'time_off' : 'scheduled',
+    status: isHoliday ? 'holiday' : (isCompressedDay || isTimeOff) ? 'time_off' : 'scheduled',
     isCompressedDay,
     isTimeOff,
+    isHoliday,
   };
 
   const conflicts = detectConflicts(
@@ -242,10 +265,11 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
       location: location.trim() || undefined,
       description: description.trim() || undefined,
       notes: description.trim() || undefined,
-      status: (isCompressedDay || isTimeOff) ? 'time_off' : 'scheduled',
+      status: isHoliday ? 'holiday' : (isCompressedDay || isTimeOff) ? 'time_off' : 'scheduled',
       colorPreset,
       isCompressedDay,
       isTimeOff,
+      isHoliday,
       recurringDates: recurringType !== 'none' ? recurringDatesPreview : undefined,
     });
     onClose();
@@ -302,7 +326,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                   >
                     <div className="font-bold">{preset.label}</div>
                     <div className="text-[10px] text-slate-500 font-normal">
-                      {formatTime12h(preset.startTime)} - {formatTime12h(preset.endTime)}
+                      {formatTime24h(preset.startTime)} - {formatTime24h(preset.endTime)}
                     </div>
                   </button>
                 );
@@ -422,6 +446,44 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
             />
           </div>
 
+          {/* Holiday Option */}
+          <div className={`p-3.5 border rounded-xl flex items-center justify-between transition-all ${
+            isHoliday 
+              ? 'bg-orange-50/90 border-orange-300 shadow-2xs ring-1 ring-orange-500/20' 
+              : 'bg-slate-50 border-slate-200 hover:bg-slate-100/60'
+          }`}>
+            <div className="flex items-start space-x-3">
+              <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${
+                isHoliday ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-700'
+              }`}>
+                <Palmtree className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>Holiday</span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    isHoliday ? 'bg-orange-200 text-orange-950' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    Default 8-16 (7.5 hr) • Hours Counted
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-normal mt-0.5">
+                  Holiday is an off day, but hours default to 08:00 – 16:00 (7.5 hrs) and will be counted in schedule totals.
+                </p>
+              </div>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+              <input
+                type="checkbox"
+                checked={isHoliday}
+                onChange={(e) => handleToggleHoliday(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+            </label>
+          </div>
+
           {/* Time Off Option */}
           <div className={`p-3.5 border rounded-xl flex items-center justify-between transition-all ${
             isTimeOff 
@@ -508,7 +570,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Vacation, Sick Leave, Family Event, Medical Appointment..."
+              placeholder="e.g. Statutory Holiday, Thanksgiving, Vacation, Sick Leave..."
               className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -517,7 +579,13 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
           <div className="bg-indigo-50/60 border border-indigo-100 rounded-lg px-3 py-2 flex items-center justify-between text-xs font-semibold text-indigo-900">
             <span>Calculated Weekly Schedule Time:</span>
             <span className="text-sm font-bold bg-indigo-200/60 px-2 py-0.5 rounded">
-              {isCompressedDay ? '0 Hours (Compress Day)' : isTimeOff ? `${durationHours} Hours (Time Off)` : `${durationHours} Hours`}
+              {isCompressedDay 
+                ? '0 Hours (Compress Day)' 
+                : isHoliday 
+                ? `${durationHours} Hours (Holiday - Off Day)` 
+                : isTimeOff 
+                ? `${durationHours} Hours (Time Off)` 
+                : `${durationHours} Hours`}
             </span>
           </div>
 

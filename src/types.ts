@@ -5,7 +5,7 @@ export interface Employee {
   avatarBg?: string;
 }
 
-export type ShiftStatus = 'scheduled' | 'completed' | 'canceled' | 'time_off';
+export type ShiftStatus = 'scheduled' | 'completed' | 'canceled' | 'time_off' | 'holiday';
 
 export interface Shift {
   id: string;
@@ -21,6 +21,7 @@ export interface Shift {
   colorPreset?: string;
   isCompressedDay?: boolean;
   isTimeOff?: boolean;
+  isHoliday?: boolean;
 }
 
 export interface TimeOffRequest {

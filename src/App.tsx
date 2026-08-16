@@ -228,10 +228,15 @@ export default function App() {
         location: shiftData.location,
         notes: shiftData.notes,
         description: shiftData.description,
-        status: (shiftData.isCompressedDay || shiftData.isTimeOff) ? 'time_off' : (shiftData.status || 'scheduled'),
+        status: shiftData.isHoliday
+          ? 'holiday'
+          : (shiftData.isCompressedDay || shiftData.isTimeOff)
+          ? 'time_off'
+          : (shiftData.status || 'scheduled'),
         colorPreset: shiftData.colorPreset,
         isCompressedDay: shiftData.isCompressedDay,
         isTimeOff: shiftData.isTimeOff,
+        isHoliday: shiftData.isHoliday,
       };
       setShifts((prev) =>
         prev.map((s) => (s.id === shiftData.id ? shiftToSave : s))
@@ -260,10 +265,15 @@ export default function App() {
         location: shiftData.location,
         notes: shiftData.notes,
         description: shiftData.description,
-        status: (shiftData.isCompressedDay || shiftData.isTimeOff) ? 'time_off' : (shiftData.status || 'scheduled'),
+        status: shiftData.isHoliday
+          ? 'holiday'
+          : (shiftData.isCompressedDay || shiftData.isTimeOff)
+          ? 'time_off'
+          : (shiftData.status || 'scheduled'),
         colorPreset: shiftData.colorPreset,
         isCompressedDay: shiftData.isCompressedDay,
         isTimeOff: shiftData.isTimeOff,
+        isHoliday: shiftData.isHoliday,
       }));
 
       setShifts((prev) => [...prev, ...newShifts]);

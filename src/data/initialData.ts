@@ -55,7 +55,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
 export const SHIFT_PRESETS: ShiftPreset[] = [
   {
     id: 'preset-day',
-    label: 'Day Shift (7am - 7pm)',
+    label: 'Day Shift (7-19)',
     startTime: '07:00',
     endTime: '19:00',
     breakMinutes: 30,
@@ -63,7 +63,7 @@ export const SHIFT_PRESETS: ShiftPreset[] = [
   },
   {
     id: 'preset-night',
-    label: 'Night Shift (7pm - 7am)',
+    label: 'Night Shift (19-7)',
     startTime: '19:00',
     endTime: '07:00',
     breakMinutes: 30,
@@ -86,7 +86,7 @@ export function generateInitialShifts(): Shift[] {
       endTime: '19:00',
       breakMinutes: 30,
       location: 'Main HQ',
-      notes: 'Morning ops sync at 9 AM',
+      notes: 'Morning ops sync at 09:00',
       status: 'scheduled',
       colorPreset: 'preset-day',
     },

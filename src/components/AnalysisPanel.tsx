@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Employee, Shift } from '../types';
-import { calculateShiftHours, formatDateISO, parseDateISO, getStartOfWeek } from '../utils/dateUtils';
+import { calculateShiftHours, formatDateISO, parseDateISO, getStartOfWeek, formatTime24h } from '../utils/dateUtils';
 import {
   BarChart2,
   Calendar,
@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Building2,
   FileText,
+  Palmtree,
 } from 'lucide-react';
 
 interface AnalysisPanelProps {
@@ -88,8 +89,8 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   // Filter matching shifts
   const matchingShifts = useMemo(() => {
     return shifts.filter((s) => {
-      // Exclude canceled or time off shifts
-      if (s.status === 'canceled' || s.isTimeOff) return false;
+      // Exclude canceled or non-holiday time off shifts (Holiday hours are counted)
+      if (s.status === 'canceled' || (s.isTimeOff && !s.isHoliday)) return false;
 
       // Date range check
       if (s.date < startIso || s.date > endIso) return false;
@@ -597,10 +598,20 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                 {matchingShifts.map((shift) => {
                   const emp = employees.find((e) => e.id === shift.employeeId);
                   const hrs = calculateShiftHours(shift.startTime, shift.endTime, shift.breakMinutes);
+                  const isHoliday = shift.isHoliday || shift.status === 'holiday';
+
                   return (
                     <tr key={shift.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">
-                        {shift.date}
+                        <div className="flex items-center space-x-2">
+                          <span>{shift.date}</span>
+                          {isHoliday && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-orange-100 text-orange-950 font-extrabold text-[10px] border border-orange-200/80">
+                              <Palmtree className="w-3 h-3 mr-1 text-orange-600" />
+                              Holiday (Off)
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
                         {emp ? emp.name : 'Unknown Member'}
@@ -616,7 +627,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                         )}
                       </td>
                       <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
-                        {shift.startTime && shift.endTime ? `${shift.startTime} – ${shift.endTime}` : 'All Day / Flexible'}
+                        {shift.startTime && shift.endTime ? `${formatTime24h(shift.startTime)} – ${formatTime24h(shift.endTime)}` : 'All Day / Flexible'}
                       </td>
                       <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                         {shift.breakMinutes} min

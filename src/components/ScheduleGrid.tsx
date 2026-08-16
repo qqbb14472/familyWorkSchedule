@@ -3,7 +3,7 @@ import { Employee, Shift, TimeOffRequest, ShiftPreset } from '../types';
 import {
   formatDateISO,
   getWeekDays,
-  formatTime12h,
+  formatTime24h,
   calculateShiftHours,
   detectConflicts,
   isDateInRange
@@ -19,7 +19,8 @@ import {
   CalendarX,
   UserCheck,
   Building,
-  Coffee
+  Coffee,
+  Palmtree
 } from 'lucide-react';
 
 interface ScheduleGridProps {
@@ -91,11 +92,11 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
         <div className="flex items-center space-x-4 text-xs font-medium text-slate-600">
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-            <span>Day Shift (7am - 7pm)</span>
+            <span>Day Shift (7-19)</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-800"></span>
-            <span>Night Shift (7pm - 7am)</span>
+            <span>Night Shift (19-7)</span>
           </div>
         </div>
       </div>
@@ -255,17 +256,25 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                           {cellShifts.map((shift) => {
                             const hours = calculateShiftHours(shift.startTime, shift.endTime, shift.breakMinutes);
                             const conflicts = detectConflicts(shift, shifts, timeOffRequests);
+                            const isHolidayShift = shift.isHoliday || shift.status === 'holiday';
 
                             return (
                               <div
                                 key={shift.id}
                                 className={`mb-1 p-2 rounded-lg border text-xs font-medium shadow-2xs relative group/card transition-all ${
-                                  shift.isCompressedDay || shift.status === 'time_off'
+                                  isHolidayShift
+                                    ? 'bg-orange-50/95 border-orange-300 text-orange-950'
+                                    : shift.isCompressedDay || shift.status === 'time_off'
                                     ? 'bg-purple-50/90 border-purple-300 text-purple-950'
                                     : getShiftCardBg(shift.colorPreset)
                                 }`}
                               >
-                                {shift.isCompressedDay ? (
+                                {isHolidayShift ? (
+                                  <div className="mb-1 inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-orange-200/90 text-orange-950 text-[10px] font-extrabold">
+                                    <Palmtree className="w-2.5 h-2.5 shrink-0" />
+                                    <span>Holiday (Off)</span>
+                                  </div>
+                                ) : shift.isCompressedDay ? (
                                   <div className="mb-1 inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-purple-200/80 text-purple-900 text-[10px] font-extrabold">
                                     <Coffee className="w-2.5 h-2.5 shrink-0" />
                                     <span>Compress Day</span>
@@ -283,10 +292,21 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                                       <Coffee className="w-3 h-3 text-purple-700 shrink-0" />
                                       <span>Time Off</span>
                                     </span>
+                                  ) : isHolidayShift ? (
+                                    <span
+                                      className="font-bold text-[11px] flex items-center gap-1 text-orange-950 truncate whitespace-nowrap min-w-0"
+                                      title={`${formatTime24h(shift.startTime)} – ${formatTime24h(shift.endTime)}`}
+                                    >
+                                      <Clock className="w-3 h-3 text-orange-700 opacity-80 shrink-0" />
+                                      <span className="truncate">{formatTime24h(shift.startTime)} – {formatTime24h(shift.endTime)}</span>
+                                    </span>
                                   ) : (
-                                    <span className="font-bold text-[11px] flex items-center gap-1">
-                                      <Clock className="w-3 h-3 opacity-70" />
-                                      {formatTime12h(shift.startTime)} – {formatTime12h(shift.endTime)}
+                                    <span
+                                      className="font-bold text-[11px] flex items-center gap-1 truncate whitespace-nowrap min-w-0"
+                                      title={`${formatTime24h(shift.startTime)} – ${formatTime24h(shift.endTime)}`}
+                                    >
+                                      <Clock className="w-3 h-3 opacity-70 shrink-0" />
+                                      <span className="truncate">{formatTime24h(shift.startTime)} – {formatTime24h(shift.endTime)}</span>
                                     </span>
                                   )}
 
